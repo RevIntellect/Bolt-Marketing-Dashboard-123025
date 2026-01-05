@@ -80,20 +80,21 @@ const dashboardCards = [
     textColor: "text-white",
   },
   {
-    id: "marketing-cloud",
-    title: "Marketing Cloud",
-    subtitle: "",
-    icon: Cloud,
-    color: "from-red-500 to-rose-600",
-    textColor: "text-white",
-  },
-  {
     id: "direct-mail",
     title: "Direct Mail",
     subtitle: "",
     icon: Mail,
     color: "from-orange-500 to-amber-600",
     textColor: "text-white",
+  },
+  {
+    id: "marketing-cloud",
+    title: "Marketing Cloud",
+    subtitle: "Coming Soon",
+    icon: Cloud,
+    color: "from-red-500 to-rose-600",
+    textColor: "text-white",
+    disabled: true,
   },
 ];
 
@@ -109,9 +110,10 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
         {dashboardCards.map((card, index) => (
           <button
             key={card.id}
-            onClick={() => onNavigate(card.id)}
+            onClick={() => !card.disabled && onNavigate(card.id)}
             className="group relative flex flex-col items-center"
             style={{ animationDelay: `${index * 50}ms` }}
+            disabled={card.disabled}
           >
             {/* Connection line */}
             <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex flex-col items-center opacity-30">
@@ -124,9 +126,9 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
               className={`
                 w-full aspect-[4/3] rounded-xl bg-gradient-to-br ${card.color}
                 flex flex-col items-center justify-center gap-2 p-4
-                shadow-lg hover:shadow-xl transition-all duration-300
-                hover:scale-105 hover:-translate-y-1
+                shadow-lg transition-all duration-300
                 ${card.textColor}
+                ${card.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-xl hover:scale-105 hover:-translate-y-1'}
               `}
             >
               <card.icon className="w-8 h-8" />
@@ -145,6 +147,10 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
       <div className="max-w-4xl mx-auto mt-12">
         <h2 className="text-lg font-semibold text-foreground text-center mb-4">Connected Data Sources</h2>
         <div className="flex flex-wrap justify-center gap-3">
+          <div className="flex items-center gap-2 px-4 py-2 bg-card rounded-full border border-border shadow-sm">
+            <div className="w-2 h-2 rounded-full bg-green-500" />
+            <span className="text-sm text-muted-foreground">Dataslayer</span>
+          </div>
           <div className="flex items-center gap-2 px-4 py-2 bg-card rounded-full border border-border shadow-sm">
             <div className="w-2 h-2 rounded-full bg-green-500" />
             <span className="text-sm text-muted-foreground">Google Analytics</span>

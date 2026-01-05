@@ -12,7 +12,6 @@ import { WebsiteTrafficDashboard } from "@/components/dashboard/WebsiteTrafficDa
 import { AcquisitionDashboard } from "@/components/dashboard/AcquisitionDashboard";
 import { FinancialDashboard } from "@/components/dashboard/FinancialDashboard";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { ConnectionStatus } from "@/components/ConnectionStatus";
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
 
@@ -72,11 +71,10 @@ const Index = () => {
             />
           </button>
           <div className="flex items-center gap-4">
-            <ConnectionStatus />
             <ThemeToggle />
             <div className="text-right">
               <p className="text-sm font-medium text-foreground">Marketing Team</p>
-              <p className="text-xs text-muted-foreground">Connected to 4 sources</p>
+              <p className="text-xs text-muted-foreground">Connected to 5 sources</p>
             </div>
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
               <span className="text-white font-semibold text-sm">MT</span>
