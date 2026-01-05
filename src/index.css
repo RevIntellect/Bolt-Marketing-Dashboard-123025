@@ -133,38 +133,50 @@
   .text-success {
     color: hsl(var(--success));
   }
-  
+
   .text-warning {
     color: hsl(var(--warning));
   }
-  
+
   .bg-success {
     background-color: hsl(var(--success));
   }
-  
+
   .bg-warning {
     background-color: hsl(var(--warning));
   }
-  
+
   .shadow-card {
     box-shadow: var(--shadow-card);
   }
-  
+
   .shadow-card-hover {
     box-shadow: var(--shadow-card-hover);
   }
-  
+
   .shadow-elevated {
     box-shadow: var(--shadow-elevated);
   }
-  
+
   .gradient-primary {
     background: var(--gradient-primary);
   }
-  
+
   .gradient-card {
     background: var(--gradient-card);
   }
+}
+
+[data-radix-popper-content-wrapper],
+[data-radix-portal] {
+  isolation: isolate;
+}
+
+[data-radix-popper-content-wrapper] > *,
+[data-radix-portal] > * {
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 /* Custom scrollbar */
