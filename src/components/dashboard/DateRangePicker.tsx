@@ -231,10 +231,10 @@ export function DateRangePicker({
             <span>Date Filter: {getDisplayLabel()}</span>
           </Button>
         </PopoverTrigger>
-      <PopoverContent className="w-auto p-0 bg-popover" align="start" sideOffset={8}>
-        <div className="flex bg-popover">
+      <PopoverContent className="w-auto p-0 bg-popover/100 backdrop-blur-none" align="start" sideOffset={8}>
+        <div className="flex bg-popover/100">
           {/* Presets List */}
-          <div className="border-r border-border max-h-[400px] overflow-y-auto bg-popover">
+          <div className="border-r border-border max-h-[400px] overflow-y-auto bg-popover/100">
             <div className="flex flex-col py-2">
               {presets.map((preset) => (
                 <button
@@ -267,7 +267,7 @@ export function DateRangePicker({
 
           {/* Calendar (shown when custom is selected) */}
           {showCalendar && (
-            <div className="p-3 bg-popover">
+            <div className="p-3 bg-popover/100">
               <Calendar
                 initialFocus
                 mode="range"
