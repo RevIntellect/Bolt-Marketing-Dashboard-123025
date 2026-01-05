@@ -3,7 +3,7 @@ import { DateRange } from "react-day-picker";
 import { KPICard } from "./KPICard";
 import { ChartCard } from "./ChartCard";
 import { DateRangePicker } from "./DateRangePicker";
-import { Globe, Users, Clock, FileText, MousePointer, Eye, ArrowLeft } from "lucide-react";
+import { Globe, Users, Clock, FileText, MousePointer, Eye, ArrowLeft, AlertCircle } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -16,12 +16,14 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { useGA4Traffic } from "@/hooks/useMarketingData";
 
 interface WebsiteTrafficDashboardProps {
   onBack: () => void;
 }
 
-const trafficData = [
+// Fallback data when no real data is available
+const fallbackTrafficData = [
   { month: "Jan", sessions: 45000, users: 32000, pageviews: 125000 },
   { month: "Feb", sessions: 52000, users: 38000, pageviews: 145000 },
   { month: "Mar", sessions: 58000, users: 42000, pageviews: 168000 },
@@ -30,7 +32,7 @@ const trafficData = [
   { month: "Jun", sessions: 68000, users: 50000, pageviews: 195000 },
 ];
 
-const deviceData = [
+const fallbackDeviceData = [
   { month: "Jan", desktop: 55, mobile: 35, tablet: 10 },
   { month: "Feb", desktop: 52, mobile: 38, tablet: 10 },
   { month: "Mar", desktop: 50, mobile: 40, tablet: 10 },
@@ -41,6 +43,40 @@ const deviceData = [
 
 export function WebsiteTrafficDashboard({ onBack }: WebsiteTrafficDashboardProps) {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const { data: trafficData, isLoading, error } = useGA4Traffic();
+
+  // Format numbers for display
+  const formatNumber = (num: number): string => {
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `${(num / 1000).toFixed(0)}K`;
+    return num.toString();
+  };
+
+  const formatDuration = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.round(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Use real data or fallback
+  const sessions = trafficData?.sessions ?? 340000;
+  const users = trafficData?.users ?? 247000;
+  const avgSessionDuration = trafficData?.avgSessionDuration ?? 272;
+  const pagesPerSession = trafficData?.pagesPerSession ?? "3.8";
+  const bounceRate = trafficData?.bounceRate ?? "42.5";
+  const newUserPercent = trafficData?.newUserPercent ?? "68.4";
+  const pageViews = trafficData?.pageViews ?? 968000;
+  const deviceBreakdown = trafficData?.deviceBreakdown ?? { desktop: 45, mobile: 45, tablet: 10 };
+
+  // Transform device breakdown for chart
+  const deviceData = Object.keys(deviceBreakdown).length > 0
+    ? fallbackDeviceData.map(row => ({
+        ...row,
+        desktop: deviceBreakdown.desktop ?? row.desktop,
+        mobile: deviceBreakdown.mobile ?? row.mobile,
+        tablet: deviceBreakdown.tablet ?? row.tablet,
+      }))
+    : fallbackDeviceData;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -54,30 +90,41 @@ export function WebsiteTrafficDashboard({ onBack }: WebsiteTrafficDashboardProps
           </button>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Website Traffic</h1>
-            <p className="text-muted-foreground mt-1">Google Analytics data overview</p>
+            <p className="text-muted-foreground mt-1">
+              Google Analytics data overview
+              {trafficData && <span className="text-green-500 ml-2">● Live</span>}
+              {!trafficData && !isLoading && <span className="text-yellow-500 ml-2">● Sample Data</span>}
+            </p>
           </div>
         </div>
         <DateRangePicker dateRange={dateRange} onDateRangeChange={setDateRange} />
       </div>
 
+      {error && (
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-destructive" />
+          <span className="text-sm text-destructive">Failed to load data. Showing sample data.</span>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Total Sessions" value="340K" change="+18.2%" icon={Globe} />
-        <KPICard title="Unique Users" value="247K" change="+15.8%" icon={Users} />
-        <KPICard title="Avg. Session Duration" value="4:32" change="+0:24" icon={Clock} />
-        <KPICard title="Pages per Session" value="3.8" change="+0.4" icon={FileText} />
+        <KPICard title="Total Sessions" value={formatNumber(sessions)} change="+18.2%" icon={Globe} />
+        <KPICard title="Unique Users" value={formatNumber(users)} change="+15.8%" icon={Users} />
+        <KPICard title="Avg. Session Duration" value={formatDuration(avgSessionDuration)} change="+0:24" icon={Clock} />
+        <KPICard title="Pages per Session" value={pagesPerSession} change="+0.4" icon={FileText} />
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KPICard title="Bounce Rate" value="42.5%" change="-3.2%" icon={MousePointer} />
-        <KPICard title="New Users" value="68.4%" change="+2.1%" icon={Users} />
-        <KPICard title="Pageviews" value="968K" change="+22.5%" icon={Eye} />
+        <KPICard title="Bounce Rate" value={`${bounceRate}%`} change="-3.2%" isPositive icon={MousePointer} />
+        <KPICard title="New Users" value={`${newUserPercent}%`} change="+2.1%" icon={Users} />
+        <KPICard title="Pageviews" value={formatNumber(pageViews)} change="+22.5%" icon={Eye} />
         <KPICard title="Exit Rate" value="38.2%" change="-1.8%" icon={Globe} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ChartCard title="Traffic Trends">
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={trafficData}>
+            <AreaChart data={fallbackTrafficData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
               <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
