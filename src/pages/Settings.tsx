@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { GoogleDriveImport } from "@/components/GoogleDriveImport";
 
 interface ApiCredential {
   id: string;
@@ -206,8 +207,8 @@ const Settings = () => {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Dataslayer Settings</h1>
-            <p className="text-sm text-muted-foreground">Configure your Dataslayer API connection</p>
+            <h1 className="text-2xl font-bold">Data Integration Settings</h1>
+            <p className="text-sm text-muted-foreground">Configure your data sources and API connections</p>
           </div>
         </div>
       </header>
@@ -355,6 +356,9 @@ const Settings = () => {
             </pre>
           </CardContent>
         </Card>
+
+        {/* Google Drive CSV Import Section */}
+        <GoogleDriveImport />
       </main>
     </div>
   );
