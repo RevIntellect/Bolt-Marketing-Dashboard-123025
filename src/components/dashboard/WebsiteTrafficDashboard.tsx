@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { DateRange } from "react-day-picker";
 import { KPICard } from "./KPICard";
 import { ChartCard } from "./ChartCard";
 import { DateRangePicker } from "./DateRangePicker";
-import { Globe, Users, Clock, FileText, MousePointer, Eye, ArrowLeft } from "lucide-react";
+import { useMarketingData } from "@/hooks/useMarketingData";
+import { Globe, Users, Clock, FileText, MousePointer, Eye, ArrowLeft, Loader2 } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -21,7 +22,8 @@ interface WebsiteTrafficDashboardProps {
   onBack: () => void;
 }
 
-const trafficData = [
+// Fallback mock data when no live data available
+const mockTrafficData = [
   { month: "Jan", sessions: 45000, users: 32000, pageviews: 125000 },
   { month: "Feb", sessions: 52000, users: 38000, pageviews: 145000 },
   { month: "Mar", sessions: 58000, users: 42000, pageviews: 168000 },
@@ -30,7 +32,7 @@ const trafficData = [
   { month: "Jun", sessions: 68000, users: 50000, pageviews: 195000 },
 ];
 
-const deviceData = [
+const mockDeviceData = [
   { month: "Jan", desktop: 55, mobile: 35, tablet: 10 },
   { month: "Feb", desktop: 52, mobile: 38, tablet: 10 },
   { month: "Mar", desktop: 50, mobile: 40, tablet: 10 },
@@ -41,6 +43,107 @@ const deviceData = [
 
 export function WebsiteTrafficDashboard({ onBack }: WebsiteTrafficDashboardProps) {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+
+  const { data: trafficTrendData, loading: trafficLoading } = useMarketingData({
+    source: "website_traffic",
+    metricType: "traffic_trend",
+    dateRangeStart: dateRange?.from?.toISOString().split("T")[0],
+    dateRangeEnd: dateRange?.to?.toISOString().split("T")[0],
+  });
+
+  const { data: deviceTrendData, loading: deviceLoading } = useMarketingData({
+    source: "website_traffic",
+    metricType: "device_distribution",
+    dateRangeStart: dateRange?.from?.toISOString().split("T")[0],
+    dateRangeEnd: dateRange?.to?.toISOString().split("T")[0],
+  });
+
+  const { data: kpiData, loading: kpiLoading } = useMarketingData({
+    source: "website_traffic",
+    metricType: "kpi_summary",
+    dateRangeStart: dateRange?.from?.toISOString().split("T")[0],
+    dateRangeEnd: dateRange?.to?.toISOString().split("T")[0],
+  });
+
+  const loading = trafficLoading || deviceLoading || kpiLoading;
+  const hasLiveData = trafficTrendData.length > 0 || deviceTrendData.length > 0 || kpiData.length > 0;
+
+  // Compute KPIs from live data or use defaults
+  const kpis = useMemo(() => {
+    if (kpiData.length > 0) {
+      const latest = kpiData[0].data;
+      return {
+        totalSessions: latest.total_sessions || latest.sessions || 0,
+        uniqueUsers: latest.unique_users || latest.users || 0,
+        avgSessionDuration: latest.avg_session_duration || "0:00",
+        pagesPerSession: latest.pages_per_session || 0,
+        bounceRate: latest.bounce_rate || 0,
+        newUsers: latest.new_users_percent || 0,
+        pageviews: latest.pageviews || latest.page_views || 0,
+        exitRate: latest.exit_rate || 0,
+        // Changes
+        totalSessionsChange: latest.total_sessions_change || "+0%",
+        uniqueUsersChange: latest.unique_users_change || "+0%",
+        avgSessionDurationChange: latest.avg_session_duration_change || "+0:00",
+        pagesPerSessionChange: latest.pages_per_session_change || "+0",
+        bounceRateChange: latest.bounce_rate_change || "+0%",
+        newUsersChange: latest.new_users_change || "+0%",
+        pageviewsChange: latest.pageviews_change || "+0%",
+        exitRateChange: latest.exit_rate_change || "+0%",
+      };
+    }
+    // Default mock values
+    return {
+      totalSessions: 340000,
+      uniqueUsers: 247000,
+      avgSessionDuration: "4:32",
+      pagesPerSession: 3.8,
+      bounceRate: 42.5,
+      newUsers: 68.4,
+      pageviews: 968000,
+      exitRate: 38.2,
+      totalSessionsChange: "+18.2%",
+      uniqueUsersChange: "+15.8%",
+      avgSessionDurationChange: "+0:24",
+      pagesPerSessionChange: "+0.4",
+      bounceRateChange: "-3.2%",
+      newUsersChange: "+2.1%",
+      pageviewsChange: "+22.5%",
+      exitRateChange: "-1.8%",
+    };
+  }, [kpiData]);
+
+  // Transform traffic data
+  const trafficData = useMemo(() => {
+    if (trafficTrendData.length > 0) {
+      return trafficTrendData.slice(0, 12).map((record) => ({
+        month: record.data.month || "Unknown",
+        sessions: record.data.sessions || 0,
+        users: record.data.users || 0,
+        pageviews: record.data.pageviews || record.data.page_views || 0,
+      }));
+    }
+    return mockTrafficData;
+  }, [trafficTrendData]);
+
+  // Transform device data
+  const deviceData = useMemo(() => {
+    if (deviceTrendData.length > 0) {
+      return deviceTrendData.slice(0, 12).map((record) => ({
+        month: record.data.month || "Unknown",
+        desktop: record.data.desktop || 0,
+        mobile: record.data.mobile || 0,
+        tablet: record.data.tablet || 0,
+      }));
+    }
+    return mockDeviceData;
+  }, [deviceTrendData]);
+
+  const formatNumber = (num: number): string => {
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `${(num / 1000).toFixed(0)}K`;
+    return num.toString();
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -54,24 +157,32 @@ export function WebsiteTrafficDashboard({ onBack }: WebsiteTrafficDashboardProps
           </button>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Website Traffic</h1>
-            <p className="text-muted-foreground mt-1">Google Analytics data overview</p>
+            <p className="text-muted-foreground mt-1">
+              Google Analytics data overview
+              {!hasLiveData && !loading && (
+                <span className="ml-2 text-xs text-amber-500">(showing sample data)</span>
+              )}
+            </p>
           </div>
         </div>
-        <DateRangePicker dateRange={dateRange} onDateRangeChange={setDateRange} />
+        <div className="flex items-center gap-4">
+          {loading && <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />}
+          <DateRangePicker dateRange={dateRange} onDateRangeChange={setDateRange} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Total Sessions" value="340K" change="+18.2%" icon={Globe} />
-        <KPICard title="Unique Users" value="247K" change="+15.8%" icon={Users} />
-        <KPICard title="Avg. Session Duration" value="4:32" change="+0:24" icon={Clock} />
-        <KPICard title="Pages per Session" value="3.8" change="+0.4" icon={FileText} />
+        <KPICard title="Total Sessions" value={formatNumber(kpis.totalSessions)} change={kpis.totalSessionsChange} icon={Globe} />
+        <KPICard title="Unique Users" value={formatNumber(kpis.uniqueUsers)} change={kpis.uniqueUsersChange} icon={Users} />
+        <KPICard title="Avg. Session Duration" value={kpis.avgSessionDuration} change={kpis.avgSessionDurationChange} icon={Clock} />
+        <KPICard title="Pages per Session" value={kpis.pagesPerSession.toFixed(1)} change={kpis.pagesPerSessionChange} icon={FileText} />
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KPICard title="Bounce Rate" value="42.5%" change="-3.2%" icon={MousePointer} />
-        <KPICard title="New Users" value="68.4%" change="+2.1%" icon={Users} />
-        <KPICard title="Pageviews" value="968K" change="+22.5%" icon={Eye} />
-        <KPICard title="Exit Rate" value="38.2%" change="-1.8%" icon={Globe} />
+        <KPICard title="Bounce Rate" value={`${kpis.bounceRate}%`} change={kpis.bounceRateChange} isPositive={kpis.bounceRateChange.startsWith("-")} icon={MousePointer} />
+        <KPICard title="New Users" value={`${kpis.newUsers}%`} change={kpis.newUsersChange} icon={Users} />
+        <KPICard title="Pageviews" value={formatNumber(kpis.pageviews)} change={kpis.pageviewsChange} icon={Eye} />
+        <KPICard title="Exit Rate" value={`${kpis.exitRate}%`} change={kpis.exitRateChange} isPositive={kpis.exitRateChange.startsWith("-")} icon={Globe} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
